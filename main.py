@@ -31,7 +31,7 @@ app.secret_key = os.environ.get("APP_SECRET_KEY", "RANDOM_SECRET_KEY_123_CHANGE_
 db = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="12345678",
+    password="Your MySQL password",
     database="smart_inspection"
 )
 cursor = db.cursor()
@@ -568,3 +568,4 @@ def video_feed():
 if __name__ == "__main__":
     print("🚗 Smart Vehicle License Plate Inspection System (Fuzzy + Fallback + Auth Enabled)")
     app.run(host="0.0.0.0", port=5000, threaded=True)
+
