@@ -17,7 +17,7 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 db = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="12345678",
+    password="Your MySQL PAssword",
     database="smart_inspection"
 )
 cursor = db.cursor()
@@ -94,3 +94,4 @@ for root, _, files in os.walk(DATASET_DIR):
 
 db.close()
 print("✅ All plates from dataset processed and stored successfully!")
+
