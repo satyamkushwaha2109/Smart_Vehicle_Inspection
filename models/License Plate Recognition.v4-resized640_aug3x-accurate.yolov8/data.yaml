@@ -1,0 +1,10 @@
+# Smart License Plate Detection Dataset
+
+path: E:\Mini Project 5th sem\project\models\license_plate_detector
+
+train: known_dataset/images
+val: known_dataset/images
+
+names:
+  0: license_plate
+nc: 1

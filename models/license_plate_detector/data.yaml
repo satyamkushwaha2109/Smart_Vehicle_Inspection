@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['Carplate']
+
+roboflow:
+  workspace: christine-ndtou
+  project: license-plate-detection-yolov8
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/christine-ndtou/license-plate-detection-yolov8/dataset/1
