@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Vehicle License Plate Inspection System</title>
+
+  <style>
+    
+    :root{
+      --bg:#071019;
+      --panel:#0f1720;
+      --accent1:#0f6ef0;
+      --accent2:#6f42c1;
+      --muted:#9aa6b2;
+      --glass: rgba(255,255,255,0.04);
+      --glass-2: rgba(255,255,255,0.06);
+      --card-radius:16px;
+      --shadow: 0 10px 30px rgba(3,10,18,0.6);
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      background: url("https://png.pngtree.com/background/20231016/original/pngtree-efficient-autopilot-technology-top-view-of-car-with-advanced-obstacle-detection-picture-image_5574390.jpg")
+                no-repeat center center/cover;
+      background-attachment: fixed;
+      color:#eaf1f9;
+    }
+
+    #logoutFixed {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      z-index: 999;
+      padding: 12px 18px;
+      border-radius: 12px;
+      background: linear-gradient(180deg,#ff6b74,#e64b55);
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      cursor: pointer;
+      display: none; /* will show when logged-in or running */
+    }
+    #logoutFixed:hover {
+      transform: scale(1.06);
+    }
+
+
+    .brand {
+      display:flex; gap:12px; align-items:center;
+    }
+    .brand .logo {
+      width:42px; height:42px; border-radius:8px;
+      background: linear-gradient(135deg,var(--accent1), var(--accent2));
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 6px 18px rgba(15,110,240,0.18), inset 0 -2px 6px rgba(255,255,255,0.04);
+      transform: translateZ(0);
+    }
+    .brand .title { font-weight:700; font-size:18px; letter-spacing:0.3px; color:#fff; }
+    .brand .subtitle { font-size:12px; color:var(--muted); margin-top:-4px; }
+
+    .actions { display:flex; gap:12px; align-items:center; }
+
+    /* Buttons */
+    .btn {
+      border: none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700;
+      box-shadow: var(--shadow); transition: transform .12s ease, box-shadow .12s ease;
+      display:inline-flex; gap:8px; align-items:center;
+    }
+    .btn:active{ transform:translateY(1px); }
+    .blue { background: linear-gradient(180deg,#39a3ff,#0f6ef0); color:white; }
+    .yellow { background: linear-gradient(180deg,#ffcf4d,#f59f00); color:#111; }
+    .teal { background: linear-gradient(180deg,#43e1d6,#0ab1a8); color:#042; }
+    .red { background: linear-gradient(180deg,#ff6b74,#e64b55); color:white; }
+    .purple { background: linear-gradient(180deg,#9b6df5,#6f42c1); color:white; }
+    .ghost { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03); padding:8px 10px; }
+
+    /* Main layout */
+    .container{
+      max-width:1200px;
+      margin:22px auto;
+      padding:0 22px;
+      display:flex;
+      flex-direction:column;
+      gap:22px;
+    }
+
+    @media (max-width: 980px){ .container{ grid-template-columns: 1fr; } .right-column{ order:2; } }
+
+    /* Video card */
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding:18px; border-radius:var(--card-radius); box-shadow:var(--shadow); border:1px solid rgba(255,255,255,0.03);
+    }
+
+    .video-area {
+      border-radius:14px; overflow:hidden; background: #000;
+      display:flex; align-items:center; justify-content:center; position:relative;
+      padding:12px; box-shadow: 0 10px 30px rgba(1,6,12,0.6);
+    }
+    /* live feed */
+    #videoFeed { width:100%; height:580px; object-fit:contain; display:block; border-radius:10px; background:#000; }
+
+    /* Controls row inside card */
+    .controls-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:flex-start; margin-bottom:12px; }
+
+    /* Right column: info + table */
+    .right-column {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      min-width: 450px;
+    }
+
+
+    .panel {
+      background: rgba(0, 0, 0, 0.55);   /* strong dark glass */
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .status { text-align:center; color:var(--muted); margin-top:10px; font-weight:600; }
+
+    /* Table */
+    table { width:100%; border-collapse:collapse; color:#e9f2f8; font-size:14px; }
+    th,td{ padding:12px 10px; text-align:center; }
+    thead th { background: linear-gradient(90deg, var(--accent1), var(--accent2)); color:white; font-weight:700; border-radius:6px; }
+    tbody tr:nth-child(even){ background: rgba(255,255,255,0.01); }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+    /* small responsive */
+    @media (max-width:520px){
+      #videoFeed{ height:320px; }
+      .controls-row{justify-content:center;}
+    }
+
+    /* subtle animation for header brand */
+    .brand .logo svg{ filter: drop-shadow(0 6px 18px rgba(15,110,240,0.22)); transform-origin:center; animation:logoFloat 6s ease-in-out infinite; }
+    @keyframes logoFloat { 0%{ transform:translateY(0); } 50%{ transform:translateY(-4px) rotate(-2deg); } 100%{ transform:translateY(0); } }
+
+    /* tiny icon style */
+    .icon { width:18px;height:18px;display:inline-block; opacity:0.96; }
+
+    /* top-right user chip */
+    .user-chip { background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); padding:8px 12px; border-radius:10px; display:flex; gap:8px; align-items:center; color:#fff; }
+
+    /* small badge */
+    .badge { background: rgba(255,255,255,0.06); padding:6px 10px; border-radius:8px; font-weight:700; color:var(--muted); }
+
+    /* 3D hover for video card */
+    .video-area:hover { transform: translateY(-6px) scale(1.01); transition: transform .18s ease; box-shadow: 0 22px 48px rgba(10,20,30,0.6); }
+    /* Premium detection table styling */
+    #platesTable {
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.02);
+    }
+
+    #platesTable thead th {
+      padding: 14px 10px;
+      font-size: 15px;
+    }
+
+    #platesTable tbody td {
+      padding: 14px 10px !important;
+      font-size: 15px;
+    }
+
+    #platesTable tbody tr:hover {
+      background: rgba(255,255,255,0.07);
+      cursor: pointer;
+      transition: 0.18s;
+      transform: scale(1.01);
+    }
+    /* Mobile layout fix — move right column below video */
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;  /* Only one column */
+      }
+      .right-column {
+        order: 3;        /* Move below video section */
+        width: 100%;
+        margin-top: 20px;
+      }
+      section {
+         order: 1;        /* Video stays first */
+         width: 100%;
+        }
+      }
+    #statusPopup {
+      position: fixed;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      padding: 12px 22px;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+      z-index: 9999;
+      display: none;
+      animation: fadeInOut 2s ease;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translate(-50%, -10px); }
+      10% { opacity: 1; transform: translate(-50%, 0); }
+      90% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -10px); }
+    }
+    .footer-credit {
+    position: relative;       /* changed from fixed */
+    bottom: 0;                /* no floating */
+    width: 100%;
+    text-align: center;
+    font-size: 18px;
+    color: #ffffffcc;
+    letter-spacing: 1.5px;
+
+    margin-top: 40px;         /* pushes footer below content */
+
+    /* Keep your glow effect */
+    text-shadow: 
+        0 0 5px #00aaff,
+        0 0 10px #00aaff,
+        0 0 20px #0077ff,
+        0 0 40px #0055ff;
+    
+    animation: shimmer 3.5s infinite linear, float 4s ease-in-out infinite;
+
+    pointer-events: none;
+    font-weight: 500;
+}
+   
+  </style>
+</head>
+<body>
+   <header class="appbar">
+    <div class="brand">
+        <div class="logo" aria-hidden>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 10.5C5 7.5 7.5 6 12 6s7 1.5 9 4.5v4.5h-2.25v1.5h-1.5v-1.5H6.75v1.5h-1.5V15H3v-4.5z"
+                      fill="white" opacity="0.95"/>
+            </svg>
+        </div>
+
+        <div>
+            <div class="title">🚘 Smart Vehicle License Plate Inspection System</div>
+            <div class="subtitle">Premium inspection • Real-time detection</div>
+        </div>
+    </div>
+    <div class="actions" style="display:flex; align-items:center; gap:14px;">
+             
+        <div class="user-chip" id="userChip" style="display:flex;">
+            <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 20a8 8 0 0116 0"
+                      stroke="#fff" stroke-width="1.2"
+                      stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <div id="userNameHeader" style="font-weight:700; font-size:15px;">
+                {{ user_name }}
+            </div>
+        </div>
+        <button class="btn red" id="logoutFixed" onclick="logout()">
+            Logout
+        </button>
+    </div>
+</header>
+  <main class="container">
+    <section>
+      <div class="card">
+        <div class="controls-row" style="margin-bottom:12px;">
+          <button class="btn blue" onclick="send('/start')">▶ Start</button>
+          <button class="btn yellow" onclick="send('/pause')">⏸ Pause</button>
+          <button class="btn teal" onclick="send('/resume')">⏯ Resume</button>
+          <button class="btn red" onclick="send('/stop')">⏹ Stop</button>
+          <button class="btn purple" onclick="refreshDB()">🔁 Refresh DB</button>
+          <button id="logoutFixed" onclick="logout()">Logout</button>
+          <button class="btn ghost" id="downloadPdf" onclick="downloadPDF()">📄 Download PDF</button>
+
+          <select id="cameraSelect" style="margin-left:auto; background:var(--glass); color:var(--muted); border-radius:10px; padding:8px 10px; border:1px solid rgba(255,255,255,0.02)" onchange="switchCamera()">
+            <option value="laptop">💻 Laptop Camera</option>
+            <option value="phone">📱 Phone Camera</option>
+          </select>
+
+          <button class="btn red" id="logoutBtn" onclick="logout()" style="display:none;">Logout</button>
+        </div>
+
+        <div class="video-area">
+          <!-- keep same /video_feed endpoint; cache-bust when switching -->
+          <img id="videoFeed" src="/video_feed" alt="Live feed">
+        </div>
+
+        <div class="status" id="status">Status: Idle</div>
+      </div>
+    </section>
+    <aside class="right-column">
+      <div class="panel">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <div>
+            <div style="font-size:13px; color:var(--muted)">Logged in as</div>
+            <div id="userNameCard" style="font-weight:800; font-size:15px">Guest</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px; color:var(--muted)">Real-time</div>
+            <div class="badge" id="liveBadge">Idle</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="font-weight:800; margin-bottom:8px; color:var(--muted)">Recent Detections</div>
+        <div style="overflow:auto; max-height:620px;">
+          <table id="platesTable" aria-live="polite">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Plate Number</th>
+                <th>Exists</th>
+                <th>Timestamp</th>
+                <th>Owner Name</th>
+                <th>Vehicle Color</th>
+                <th>Registration Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" style="padding:18px; color:var(--muted)">No records</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel" style="text-align:center; color:var(--muted); font-size:13px;">
+        <div>Need help? Contact admin or see logs.</div>
+
+      </div>
+    </aside>
+  </main>
+
+<script>
+  async function send(path){
+    try{
+      const res = await fetch(path);
+      const j = await res.json();
+      const s = j.status || (typeof j === 'string' ? j : JSON.stringify(j));
+      setStatus(s);
+      updateTable(); 
+    } catch(err){
+      console.error('send error',err);
+      setStatus('Error');
+    }
+  }
+
+  function setStatus(text){
+    
+    document.getElementById('status').innerText = 'Status: ' + text;
+    document.getElementById('liveBadge').innerText = text;
+
+    
+    const popup = document.getElementById('statusPopup');
+    const t = document.getElementById('statusPopupText');
+    t.innerText = text;
+    popup.style.display = "block";
+
+    setTimeout(() => {
+        popup.style.display = "none";
+    }, 2000);
+
+    
+    const logoutFixed = document.getElementById('logoutFixed');
+    if(text && text.toLowerCase().includes('started'))
+        logoutFixed.style.display = 'inline-flex';
+    else
+        logoutFixed.style.display = 'none';
+  }
+
+
+  async function switchCamera(){
+    const sel = document.getElementById('cameraSelect').value;
+    document.getElementById('status').innerText = 'Status: switching camera...';
+    try{
+      await fetch('/switch_camera', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({source: sel})
+      });
+      
+      document.getElementById('videoFeed').src = '/video_feed?cb=' + Date.now();
+      setStatus('Camera switched to ' + sel);
+    }catch(e){
+      console.error(e); setStatus('Switch failed');
+    }
+  }
+
+  async function refreshDB(){
+    document.getElementById('status').innerText = 'Status: reloading DB...';
+    try{
+      const r = await fetch('/refresh_db', {method:'POST'});
+      const j = await r.json();
+      setStatus(j.status || 'DB Reloaded');
+      updateTable();
+    }catch(e){
+      console.error(e); setStatus('DB reload failed');
+    }
+  }
+
+  async function updateTable(){
+    try{
+        const r = await fetch('/data');
+        const data = await r.json();
+        const tbody = document.querySelector('#platesTable tbody');
+        tbody.innerHTML = '';
+
+        if(!data || data.length === 0){
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="padding:18px; color:var(--muted)">No records</td>
+                </tr>`;
+            return;
+        }
+
+        for(const row of data){
+            const plate = (row.plate || '').toString().replace(/[^\x20-\x7E]/g, '');
+            const tr = document.createElement('tr');
+
+            tr.innerHTML = `
+                <td>${row.id}</td>
+                <td style="font-weight:700">${plate}</td>
+                <td>${row.exists}</td>
+                <td>${row.time}</td>
+                <td>${row.owner_name || ''}</td>
+                <td>${row.vehicle_color || ''}</td>
+                <td>${row.registration_date || ''}</td>
+            `;
+
+            tbody.appendChild(tr);
+        }
+
+    }catch(e){
+        console.error('updateTable', e);
+    }
+}
+  setInterval(updateTable, 4000);
+  updateTable();
+  function downloadPDF(){
+    window.location.href = '/download_pdf';
+  }
+
+  // Logout
+  function logout(){
+    fetch('/logout').then(()=>{ window.location = '/login'; }).catch(()=>{ window.location = '/login'; });
+  }
+  (function initUser(){
+    
+    const userName = "{{ user_name }}";
+    if(userName && userName !== 'None' && userName !== 'USER_NAME_PLACEHOLDER'){
+      document.getElementById('userNameCard').innerText = userName;
+      document.getElementById('userNameHeader').innerText = userName;
+      document.getElementById('userChip').style.display = 'flex';
+      document.getElementById('logoutBtn').style.display = 'inline-flex';
+    }
+  })();
+
+  
+  window.addEventListener('load', ()=> setStatus('Idle'));
+
+</script>
+{% if play_sound %}
+  <audio id="carSound" autoplay>
+    <source src="{{ url_for('static', filename='sounds/engine.mp3') }}" type="audio/mpeg">
+  </audio>
+
+  <script>
+    document.getElementById("carSound").volume = 0.45;
+  </script>
+{% endif %}
+<!-- 🔥 STATUS POPUP -->
+<div id="statusPopup">
+    <span id="statusPopupText"></span>
+</div>
+
+</body>
+</html>
